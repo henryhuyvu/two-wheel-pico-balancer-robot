@@ -4,14 +4,19 @@ import board
 import digitalio
 import pwmio
 
-# Configure GPIO pins for Motor control
-MOTOR1_ENA_PIN = board.GP5      # PWM pin for Motor 1
-MOTOR1_IN1_PIN = board.GP6      
-MOTOR1_IN2_PIN = board.GP7
+MOTOR2_DIRECTION_FLIP = True # Change direction of rotation via software
 
-MOTOR2_IN3_PIN = board.GP8
-MOTOR2_IN4_PIN = board.GP9
-MOTOR2_ENB_PIN = board.GP10     # PWM pin for Motor 2
+# Configure GPIO pins for Motor control
+MOTOR1_ENA_PIN = board.GP0      # PWM pin for Motor 1
+MOTOR1_IN1_PIN = board.GP1      
+MOTOR1_IN2_PIN = board.GP2
+if MOTOR2_DIRECTION_FLIP == True:
+    MOTOR2_IN3_PIN = board.GP4
+    MOTOR2_IN4_PIN = board.GP3
+else:
+    MOTOR2_IN3_PIN = board.GP3
+    MOTOR2_IN4_PIN = board.GP4
+MOTOR2_ENB_PIN = board.GP5     # PWM pin for Motor 2
 
 # Constants
 PWM_FREQ = 5000 # Hz. Frequency for PWM control of motors
@@ -86,22 +91,22 @@ try:
 
     print("Motor 1: Braking...")
     control_motor(1, 0, "brake") # Speed 0, but apply brake
-    time.sleep(1)
+    time.sleep(2)
     control_motor(1, 0, "stop") # Ensure PWM is off and inputs are low
-    time.sleep(1)
-
-    # Test Motor 2
-    print("Motor 2: Forward at 60% speed for 2 seconds")
-    control_motor(2, 60, "forward")
     time.sleep(2)
 
-    print("Motor 2: Backward at 40% speed for 2 seconds")
-    control_motor(2, 40, "reverse")
+    # Test Motor 2
+    print("Motor 2: Forward at 50% speed for 2 seconds")
+    control_motor(2, 50, "forward")
+    time.sleep(2)
+
+    print("Motor 2: Backward at 75% speed for 2 seconds")
+    control_motor(2, 75, "reverse")
     time.sleep(2)
 
     print("Motor 2: Stopping (coasting)...")
     control_motor(2, 0, "stop") # Speed 0, coast to stop
-    time.sleep(1)
+    time.sleep(2)
 
     # Simultaneous control (e.g., turning a robot)
     print("Turning left: Motor 1 Forward, Motor 2 Reverse (both 80%)")
@@ -112,7 +117,17 @@ try:
     print("Stopping all motors...")
     control_motor(1, 0, "stop")
     control_motor(2, 0, "stop")
-    time.sleep(1)
+    time.sleep(2)
+
+    print("Turning left: Motor 1 Reverse, Motor 2 Forward (both 80%)")
+    control_motor(1, 80, "reverse")
+    control_motor(2, 80, "forward")
+    time.sleep(3)
+
+    print("Stopping all motors...")
+    control_motor(1, 0, "stop")
+    control_motor(2, 0, "stop")
+    time.sleep(2)
 
 except Exception as e:
     print(f"An error occurred: {e}")
