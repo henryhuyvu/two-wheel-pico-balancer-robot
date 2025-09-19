@@ -19,25 +19,38 @@ from adafruit_bno08x.i2c import BNO08X_I2C
 # ====== Motor control Constants ======
 PWM_FREQ = 5000 # Hz. Frequency for PWM control of motors
 MAX_DUTY_CYCLE = 65535  # Maximum duty cycle for PWM on RP2040
-MOTOR2_DIRECTION_FLIP = True # Change direction of rotation via software
+MOTOR2_DIRECTION_FLIP = False # Change direction of rotation via software
 
 # ====== Motor control GPIO pin definitions ======
-MOTOR1_ENA_PIN = board.GP5      # PWM pin for Motor 1
-MOTOR1_IN1_PIN = board.GP6      
-MOTOR1_IN2_PIN = board.GP7
+MOTOR1_ENA_PIN = board.GP0      # PWM pin for Motor 1
+MOTOR1_IN1_PIN = board.GP1      
+MOTOR1_IN2_PIN = board.GP2
 if MOTOR2_DIRECTION_FLIP == True:
-    MOTOR2_IN3_PIN = board.GP9
-    MOTOR2_IN4_PIN = board.GP8
+    MOTOR2_IN3_PIN = board.GP4
+    MOTOR2_IN4_PIN = board.GP3
 else:
-    MOTOR2_IN3_PIN = board.GP8
-    MOTOR2_IN4_PIN = board.GP9
-MOTOR2_ENB_PIN = board.GP10     # PWM pin for Motor 2
+    MOTOR2_IN3_PIN = board.GP3
+    MOTOR2_IN4_PIN = board.GP4
+MOTOR2_ENB_PIN = board.GP5     # PWM pin for Motor 2
+
+# ====== Encoder Constants ======
+# GP11 and GP12 for Motor 1 Encoder (A and B)
+MOTOR1_ENCODER_A_PIN = board.GP9
+MOTOR1_ENCODER_B_PIN = board.GP8
+
+# GP8 and GP9 for Motor 2 Encoder (A and B)
+MOTOR2_ENCODER_A_PIN = board.GP12
+MOTOR2_ENCODER_B_PIN = board.GP11
+
+# Encoder resolution (Counts Per Revolution) - determined from your motor specs or testing
+# For JGA25-371 with typical Hall encoders, this is often 44 CPR (11 pulses per channel * 4 quadrature states)
+ENCODER_CPR = 44
 
 # ====== IMU constants
 SAMPLE_FREQ = 400000
 # IMU GPIO pins for I2C communications/signals
-I2C_SCL_PIN = board.GP17
-I2C_SDA_PIN = board.GP16
+I2C_SCL_PIN = board.GP15
+I2C_SDA_PIN = board.GP14
 
 # ====== PID Control Constants 
 # (These will need tuning!)
@@ -59,6 +72,13 @@ acceleration = (0.0, 0.0, 0.0)
 # For orientation-based balancing, you'd use quaternion or Euler angles:
 # orientation = (0.0, 0.0, 0.0) # Yaw, Pitch, Roll (Euler)
 
+
+# Encoder Variables
+motor1_encoder_count = 0
+motor1_encoder_direction = 0  # 1 for forward, -1 for backward (relative to motor controller's definition)
+motor2_encoder_count = 0
+motor2_encoder_direction = 0
+
 # PID Variables
 last_error = 0.0
 integral = 0.0
@@ -69,8 +89,8 @@ is_balancing = False
 
 
 
-# ============ Helper functions ============
-# ==========================================
+# ============ Functions ============
+# ===================================
 
 # ====== Motor Helper Functions ======
 def set_motor_speed(motor_pwm, speed_percent):
@@ -162,9 +182,8 @@ def calculate_pid_output(current_value, target_value):
 
 
 
-# ============ Initialization ============
-# ========================================
-print("\nPico Balancer Initializing.\n")
+# ============ System Initialization ============
+# ===============================================
 
 # ====== Motor control Initialization
 # Motor 1 Direction Pins
@@ -182,6 +201,7 @@ MOTOR2_IN4 = digitalio.DigitalInOut(MOTOR2_IN4_PIN)
 MOTOR2_IN4.direction = digitalio.Direction.OUTPUT
 # Motor 2 Enable Pin
 MOTOR2_ENB = pwmio.PWMOut(MOTOR2_ENB_PIN, frequency=PWM_FREQ, duty_cycle=0)
+print("\nMotor pins initialized.\n")
 
 # ====== IMU Initialization ======
 bno = initialize_imu()
@@ -193,70 +213,70 @@ if bno is None:
         if bno is not None:
             break
     else:
-        print(f"IMU initialization failed after {N_Retries} retries. Exiting.")
+        print(f"IMU initialization failed after {N_Retries} retries. Exiting script now\nGoodbye.")
         exit()
+print("\nIMU initialized.\n")
 
 
 # ============ Main program loop ============
 # ===========================================
 
-# Initial motor testing
-try:
-    print("Motors 1 and 2: Forward at 60% speed for 2 seconds.\n")
-    control_motor(1, 50, "FWD")
-    control_motor(2, 50, "FWD")
-    time.sleep(2)
+# Motor Testing
+MOTOR_TESTING = True
+if MOTOR_TESTING == True:
+    try:
+        print("Motors 1 and 2: Forward at 60% speed for 2 seconds.\n")
+        control_motor(1, 50, "FWD")
+        control_motor(2, 50, "FWD")
+        time.sleep(2)
 
-    print("Motors 1 and 2: Backward at 40% speed for 2 seconds.\n")
-    control_motor(1, 75, "REV")
-    control_motor(2, 75, "REV")
-    time.sleep(2)
+        print("Motors 1 and 2: Backward at 40% speed for 2 seconds.\n")
+        control_motor(1, 75, "REV")
+        control_motor(2, 75, "REV")
+        time.sleep(2)
 
-    print("Motors 1 and 2: Coasting then breaking\n")
-    control_motor(1, 0, "COAST") # Ensure PWM is off and inputs are low
-    control_motor(2, 0, "COAST") # Ensure PWM is off and inputs are low
-    time.sleep(2)
-    control_motor(1, 0, "BRAKE") # Speed 0, but apply brake
-    control_motor(2, 0, "BRAKE") # Speed 0, but apply brake
-    time.sleep(1)
+        print("Motors 1 and 2: Coasting then breaking\n")
+        control_motor(1, 0, "COAST") # Ensure PWM is off and inputs are low
+        control_motor(2, 0, "COAST") # Ensure PWM is off and inputs are low
+        time.sleep(2)
+        control_motor(1, 0, "BRAKE") # Speed 0, but apply brake
+        control_motor(2, 0, "BRAKE") # Speed 0, but apply brake
+        time.sleep(1)
 
-    print("Turning left: Motor 1 FWD, Motor 2 REV.\n")
-    control_motor(1, 80, "FWD")
-    control_motor(2, 80, "REV")
-    time.sleep(2)
-    print("Turning right: Motor 1 REV, Motor 2 FWD.\n")
-    control_motor(1, 80, "REV")
-    control_motor(2, 80, "FWD")
-    time.sleep(2)
+        print("Turning left: Motor 1 FWD, Motor 2 REV.\n")
+        control_motor(1, 80, "FWD")
+        control_motor(2, 80, "REV")
+        time.sleep(2)
+        print("Turning right: Motor 1 REV, Motor 2 FWD.\n")
+        control_motor(1, 80, "REV")
+        control_motor(2, 80, "FWD")
+        time.sleep(2)
 
-    print("Stopping all motors.\n")
-    control_motor(1, 0, "COAST")
-    control_motor(2, 0, "COAST")
-    time.sleep(1)
-except Exception as e:
-    print(f"An error occurred: {e}")
-finally:
-    # Always ensure motors are stopped and pins are deinitialized on exit
-    print("Cleaning up pins and stopping motors.")
-    control_motor(1, 0, "COAST")
-    control_motor(2, 0, "COAST")
-    MOTOR1_ENA.deinit()
-    MOTOR1_IN1.deinit()
-    MOTOR1_IN2.deinit()
-    MOTOR2_IN3.deinit()
-    MOTOR2_IN4.deinit()
-    MOTOR2_ENB.deinit()
-    print("Demonstration finished.")
+        print("Stopping all motors.\n")
+        control_motor(1, 0, "COAST")
+        control_motor(2, 0, "COAST")
+        time.sleep(1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        # Always ensure motors are stopped and pins are deinitialized on exit
+        print("Cleaning up pins and stopping motors.")
+        control_motor(1, 0, "COAST")
+        control_motor(2, 0, "COAST")
+        MOTOR1_ENA.deinit()
+        MOTOR1_IN1.deinit()
+        MOTOR1_IN2.deinit()
+        MOTOR2_IN3.deinit()
+        MOTOR2_IN4.deinit()
+        MOTOR2_ENB.deinit()
+        print("Demonstration finished.")
 
 # Constant loop to output IMU reports
 count = 0
-while count <= 20:
-        time.sleep(0.1)
-        accel_x, accel_y, accel_z = bno.acceleration
-        print("Acceleration:\nX: %0.6f Y: %0.6f Z: %0.6f m/s^2 \n" % (accel_x, accel_y, accel_z))
-        count += 1
-
-while True:
+while count <= 5:
+    time.sleep(0.1)
+    accel_x, accel_y, accel_z = bno.acceleration
+    print("Acceleration:\nX: %0.6f Y: %0.6f Z: %0.6f m/s^2 \n" % (accel_x, accel_y, accel_z))
     (
         game_quat_i,
         game_quat_j,
@@ -268,7 +288,7 @@ while True:
         % (game_quat_i, game_quat_j, game_quat_k, game_quat_real)
     )
     print("")
-
+    count += 1
 
 try:
     print("Starting balancing sequence.")
