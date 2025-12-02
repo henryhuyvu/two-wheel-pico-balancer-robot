@@ -53,7 +53,7 @@ if MOTOR2_DIRECTION_FLIP == True:           # Swap direction pins for motor 2 if
 else:                                       # Alternately, swap the direction pins on flip condition
     MOTOR2_IN3_PIN = board.GP3
     MOTOR2_IN4_PIN = board.GP4
-MOTOR2_ENB_PIN = board.GP5                   # PWM pin for Motor 2
+MOTOR2_ENB_PIN = board.GP5                  # PWM pin for Motor 2
 
 # ====== Encoder Constants ======
 # Raspberry Pi Pico GPIO pins for Hall Sensor encoders A and B for Motor 1 and Motor 2
@@ -65,7 +65,7 @@ MOTOR2_ENCODER_B_PIN = board.GP11
 ENCODER_CPR = 48
 
 # ====== PID Control Constants ======
-Kp = 10.0                                    # Proportional gain
+Kp = 10.0                                   # Proportional gain
 Ki = 0.0                                    # Integral gain
 Kd = 0.01                                   # Derivative gain
 last_error = 0.0
@@ -197,17 +197,17 @@ def calculate_pid_output(current_value, target_value):
 # ====== Motor control Initialization
 # Motor 1 Direction Pins
 MOTOR1_IN1 = digitalio.DigitalInOut(MOTOR1_IN1_PIN)     # Motor 1 Direction Pin 1
-MOTOR1_IN1.direction = digitalio.Direction.OUTPUT
+MOTOR1_IN1.direction = digitalio.Direction.OUTPUT       # Set pin as output
 MOTOR1_IN2 = digitalio.DigitalInOut(MOTOR1_IN2_PIN)     # Motor 1 Direction Pin 2
-MOTOR1_IN2.direction = digitalio.Direction.OUTPUT
+MOTOR1_IN2.direction = digitalio.Direction.OUTPUT       # Set pin as output
 # Motor 1 Enable Pin
 MOTOR1_ENA = pwmio.PWMOut(MOTOR1_ENA_PIN, frequency=PWM_FREQ, duty_cycle=0) # PWM for Motor 1
 
 # Motor 2 Direction Pins
 MOTOR2_IN3 = digitalio.DigitalInOut(MOTOR2_IN3_PIN)     # Motor 2 Direction Pin 1
-MOTOR2_IN3.direction = digitalio.Direction.OUTPUT
+MOTOR2_IN3.direction = digitalio.Direction.OUTPUT       # Set pin as output
 MOTOR2_IN4 = digitalio.DigitalInOut(MOTOR2_IN4_PIN)     # Motor 2 Direction Pin 2
-MOTOR2_IN4.direction = digitalio.Direction.OUTPUT
+MOTOR2_IN4.direction = digitalio.Direction.OUTPUT       # Set pin as output
 # Motor 2 Enable Pin
 MOTOR2_ENB = pwmio.PWMOut(MOTOR2_ENB_PIN, frequency=PWM_FREQ, duty_cycle=0) # PWM for Motor 2
 print("\nMotor direction and PWM pins initialized.\n")
@@ -227,8 +227,8 @@ if bno is None:
 print("\nIMU initialized.\n")
 
 
-# ============ Main program loop ============
-# ===========================================
+# ============ Main program Loop - START ============
+# ===================================================
 
 # Motor Testing
 MOTOR_TESTING = False
@@ -365,3 +365,6 @@ except Exception as e:
     print(f"An error occurred during balancing: {e}")
     is_balancing = False
     
+
+# ============ Main program Loop - END ============
+# ===================================================
