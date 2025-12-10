@@ -5,14 +5,7 @@
 # Date: 2024-06-10
 # License: MIT License
 
-'''
-TODO: 
-Reading data from your IMU.
-Controlling your motor driver.
-Reading data from your encoders.
-Implementing the balancing algorithm (PID control, etc.).
-'''
-     
+
 
 # ============ Imports  ============
 # ==================================
@@ -21,10 +14,12 @@ import board                                # For accessing board pins
 import digitalio                            # For setting pin modes (input/output)
 import pwmio                                # For generating PWM signals for motor speed control
 import busio                                # For I2C communication with IMU
-# Adafruit library for BNO085 with IMU reports; Library found online
+import math                                 # For mathematical functions (e.g., atan2, asin, degrees)
+# Adafruit library for BNO085 IMU reports
 from adafruit_bno08x import (
     BNO_REPORT_ACCELEROMETER,
     BNO_REPORT_GAME_ROTATION_VECTOR,
+    # BNO_REPORT_LINEAR_ACCELERATION,
 )                   
 from adafruit_bno08x.i2c import BNO08X_I2C  # I2C interface for BNO085
 
@@ -32,6 +27,14 @@ from adafruit_bno08x.i2c import BNO08X_I2C  # I2C interface for BNO085
 
 # ============ Constants ============
 # ===================================
+
+# ====== IMU REPORTS ======
+
+REPORTS = [
+    BNO_REPORT_ACCELEROMETER,
+    BNO_REPORT_GAME_ROTATION_VECTOR,
+    # BNO_REPORT_LINEAR_ACCELERATION,
+]
 
 # ====== IMU constants ======
 SAMPLE_FREQ = 400000                        # I2C frequency for IMU communication
@@ -107,9 +110,11 @@ def initialize_imu():
     try:
         i2c = busio.I2C(I2C_SCL_PIN, I2C_SDA_PIN, frequency=SAMPLE_FREQ)
         bno = BNO08X_I2C(i2c)
-        bno.enable_feature(BNO_REPORT_ACCELEROMETER)
-        bno.enable_feature(BNO_REPORT_GAME_ROTATION_VECTOR)
-        print("BNO085 initialized successfully.")
+        REPORT_COUNT = 0
+        for report in REPORTS:
+            bno.enable_feature(report)
+            REPORT_COUNT += 1
+        print(f"BNO085 initialized {REPORT_COUNT} reports successfully.")
         return bno
     except ValueError as e:
         print(f"Error initializing BNO085: {e}")
@@ -282,22 +287,65 @@ if MOTOR_TESTING == True:
 
 # Constant loop to output IMU reports
 count = 0
-while count <= 100:
-    time.sleep(0.5)
-    accel_x, accel_y, accel_z = bno.acceleration
-    print("Acceleration:\nX: %0.6f Y: %0.6f Z: %0.6f m/s^2 \n" % (accel_x, accel_y, accel_z))
-    (
-        game_quat_i,
-        game_quat_j,
-        game_quat_k,
-        game_quat_real,
-    ) = bno.game_quaternion
-    print(
-        "Game Rotation Vector:\nI: %0.6f  J: %0.6f K: %0.6f  Real: %0.6f"
-        % (game_quat_i, game_quat_j, game_quat_k, game_quat_real)
-    )
-    print("")
+imu_delay = 0.5 # seconds
+data_state_accel = True
+data_state_accel_lin = False
+data_state_game_rot = True
+while count <= 1000:
+    report_list = []
+    time.sleep(imu_delay)
+    if data_state_accel == True:
+        accel_x, accel_y, accel_z = bno.acceleration
+        print("Acceleration:\nX: %0.6f Y: %0.6f Z: %0.6f m/s^2 \n" % (accel_x, accel_y, accel_z))
+    if data_state_accel_lin == True:
+        print("Linear Acceleration:")
+        (
+            linear_accel_x,
+            linear_accel_y,
+            linear_accel_z,
+        ) = bno.linear_acceleration
+        print("X: %0.6f  Y: %0.6f Z: %0.6f m/s^2" % (linear_accel_x, linear_accel_y, linear_accel_z))
+    if data_state_game_rot == True:
+        (
+            game_quat_i,
+            game_quat_j,
+            game_quat_k,
+            game_quat_real,
+        ) = bno.game_quaternion
+        print(
+            "Game Rotation Vector:\nI: %0.6f  J: %0.6f K: %0.6f  Real: %0.6f \n"
+            % (game_quat_i, game_quat_j, game_quat_k, game_quat_real)
+        )
+        # Rename for clarity with standard formula (x, y, z, w)
+        x = game_quat_i
+        y = game_quat_j
+        z = game_quat_k
+        w = game_quat_real
+
+        # Calculate Roll, Pitch, and Yaw in Radians
+        # Roll (rotation around X-axis)
+        roll_rad = math.atan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
+
+        # Pitch (rotation around Y-axis) - Use 'asin' or 'arcsin'
+        # NOTE: The value inside asin must be between -1.0 and 1.0. 
+        # Due to floating point inaccuracies, we might need to clamp it.
+        pitch_arg = 2 * (w * y - x * z)
+        pitch_arg = max(-1.0, min(1.0, pitch_arg)) # Clamp the value
+        pitch_rad = math.asin(pitch_arg)
+
+        # Yaw (rotation around Z-axis)
+        yaw_rad = math.atan2(2 * (w * z + x * y), 1 - 2 * (y**2 + z**2))
+
+        # Convert to Degrees for easier understanding
+        roll_deg = math.degrees(roll_rad)
+        pitch_deg = math.degrees(pitch_rad)
+        yaw_deg = math.degrees(yaw_rad)
+
+        print(f"Roll (X-axis): {roll_deg:0.2f} degrees")
+        print(f"Pitch (Y-axis): {pitch_deg:0.2f} degrees")
+        print(f"Yaw (Z-axis): {yaw_deg:0.2f} degrees")
     count += 1
+    print(report_list)
 
 try:
     print("Starting balancing sequence.")
