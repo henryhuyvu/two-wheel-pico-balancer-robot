@@ -72,10 +72,15 @@ The files loaded onto the Raspberry Pi can be seen in the following image:
 
 Connecting the Pico to my laptop via a USB cable then allows me to update the `code.py` file on the Pico through VSCode. I could then also monitor any serial outputs from the Pico on my laptop using `ls /dev/tty.*` to find the ID of the USB port connected to the Pico, and then monitor minicom terminal outputs using the terminal command `minicom -D /dev/tty.usbmodem101 -b 115200`, or whatever usbmodem ID is connected to the Pico.
 
-The `code.py` file on the Pico should be loaded with any one of the files under this repositories `/src` folder. 
-- `code_alt_IMU_only.py` is the latest working code which maintains an upright posture, though it does not prevent significant drift. 
-- `code_alt_encoder_added.py` is an alternate variant which adds more complexity due to the requirement of introducing a cascaded PID control loop, which is not yet properly implemented. 
-- All other scripts in the `/src` folder are preceded with "test" and focus on a single test case to validate to the user that hardware is working.
+The `code.py` file on the Pico should be loaded with any one of the files under this repositories `/src` folder.
+
+- `code_alt_IMU_only.py` is the latest working code, which maintains an upright posture, though it does not prevent significant drift.
+- `code_alt_encoder_added.py` is an alternate variant that adds complexity due to the requirement of introducing a cascaded PID control loop, which is not yet properly implemented.
+- All other scripts in the `/src` folder are preceded with "test" and focus on a single test case to validate to the user that the hardware is functioning.
+
+The `/examples` folder contains scripts created by Adafruit Industries. These scripts were used as a reference for building my own script. 
+
+The `/experiments` folder contains a couple of scripts and CSV files, which were a rough attempt at capturing and displaying tilt data over time. The thought here was that with enough manual control over the robots tilt angle, in contrast to free fall under gravity, there would be clear indication of an inflection point in the captured data which would reveal a more accurate quantification of the true equilibrium angle, where the robot is in perfect balance and would not topple forward or backward in the absence of any other external forces. This approach was quite noisy and prone to cumulative errors. This approach was abandoned as other, more pressing problems and solutions came up.
 
 ## Why this project exists
 I developed an interest in robotics years ago after seeing polished robotic systems on social media and how these tools can be applied to impact the physical world.
