@@ -2,8 +2,7 @@
 
 A PID-controlled two-wheel self-balancing robot powered by CircuitPython running on a Raspberry Pi Pico.
 
-<img src="/docs/media/Two-Wheel Balancer - Front.jpeg" alt="Photo of the 'front' side of the robot" width="250"/>
-<img src="/docs/media/Two-Wheel Balancer - Back.jpeg" alt="Photo of the 'back' side of the robot" width="250"/>
+<img src="/docs/media/Two-Wheel Balancer - Front.jpeg" alt="Photo of the 'front' side of the robot" width="250"/> <img src="/docs/media/Two-Wheel Balancer - Back.jpeg" alt="Photo of the 'back' side of the robot" width="250"/>
 
 <img src="/docs/media/Two-Wheel Balancer in Action.gif" alt="GIF of a two-wheeled balancing robot doing its best to stay upright" width="250"/>
 
@@ -68,9 +67,15 @@ This project is written in Python with an emphasis on CircuitPython for the onbo
 The process for downloading CircuitPython and its dependencies onto the Raspberry Pi Pico can be followed as instructed on the [CircuitPython webpages](https://circuitpython.org/).
 
 The files loaded onto the Raspberry Pi can be seen in the following image:
+
 <img src="/docs/media/CircuitPython Files.png" alt="Screenshot of the files located on the Raspberry Pi Pico. boot_out.txt, code.py, and a lib folder with the dependencies adafruit_bno08x, adafruit_bus_device, and adafruit_register" width="200"/>
 
 Connecting the Pico to my laptop via a USB cable then allows me to update the `code.py` file on the Pico through VSCode. I could then also monitor any serial outputs from the Pico on my laptop using `ls /dev/tty.*` to find the ID of the USB port connected to the Pico, and then monitor minicom terminal outputs using the terminal command `minicom -D /dev/tty.usbmodem101 -b 115200`, or whatever usbmodem ID is connected to the Pico.
+
+The `code.py` file on the Pico should be loaded with any one of the files under this repositories `/src` folder. 
+- `code_alt_IMU_only.py` is the latest working code which maintains an upright posture, though it does not prevent significant drift. 
+- `code_alt_encoder_added.py` is an alternate variant which adds more complexity due to the requirement of introducing a cascaded PID control loop, which is not yet properly implemented. 
+- All other scripts in the `/src` folder are preceded with "test" and focus on a single test case to validate to the user that hardware is working.
 
 ## Why this project exists
 I developed an interest in robotics years ago after seeing polished robotic systems on social media and how these tools can be applied to impact the physical world.
