@@ -23,7 +23,6 @@ The following is a list of equipment used to test, build, and assemble the robot
 - Buck converters (12V 2A; and 3.3V 0.6A )
 - Blade fuse and DIY blade fuse mount
 - Power Supply - 0 to 30V, 0 to 5A
-
 - Raspberry Pi Pico
 - Adafruit 9-DOF Orientation IMU Fusion Breakout - BNO085
 - 2x JGA25-371 DC Gearmotors with Encoders
@@ -31,7 +30,6 @@ The following is a list of equipment used to test, build, and assemble the robot
 - Double-sided PCB
 - Two-wheel balancer frame
 - M2 and M3 bolts, nuts, and standoffs
-
 - Micro USB to USB-C Cable
 - Vernier Caliper
 
