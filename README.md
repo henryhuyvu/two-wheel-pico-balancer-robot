@@ -6,51 +6,58 @@ A PID-controlled two-wheel self-balancing robot powered by CircuitPython running
 
 <img src="/docs/media/Two-Wheel Balancer in Action.gif" alt="GIF of a two-wheeled balancing robot doing its best to stay upright" width="250"/>
 
-## Project Status
-Current Status: **MVP / Proof of Concept**. The robot successfully prevents itself from falling over for a respectable period of time using only IMU tilt data. Horizontal station-keeping (preventing displacement or vehicle drift) is identified as the next step for development.
+## Project Status and Next Steps
+Current Status: **On hold**. 
 
-## Tech Stack
-The following is a list of equipment used to test, build, and assemble the robot into its current form.
+The proof of concept works. The robot successfully prevents itself from falling over for a respectable period of time using only IMU tilt data. Horizontal station-keeping (preventing displacement or vehicle drift) would be the next step for development. This may or may not require energizing and using the motor encoders that are part of the motor assembly.
 
-### PPE
+## Project Motivation
+I wanted to create a mobile platform that would allow me to explore robotics safely through trial and error. I came across the two-wheel balancing kit while shopping for electronic parts and figured it might be a helpful bundle to get started. With the kit, I was able to explore an interest in embedded systems and control theory.
+
+Near the beginning of 2025, I began paying closer attention to LLMs, eventually deploying a Docker container hosting local open source models and connecting to third-party LLM APIs. These LLMs have been very helpful providing me with information about topics and ideas I had not known before (including robotics relevant concepts), allowing me to explore quickly and transition to testing more confidently.
+
+## Technologies and Tools
+The following is a list of equipment used during testing, building, and assembly of the robot.
+
+### Personal Protective Equipment (PPE)
 - Safety glasses
 - Exhaust fan and an open window
 
-### Hardware
-- EV-Peak 50W 6Amp Multi-chemistry Balance Charger & Discharger
-- LiPo Battery (4C)
-- LiPo Battery Voltage Tester (Low Voltage Buzzer Alarm)
-- Buck converters (12V 2A; and 3.3V 0.6A )
-- Blade fuse and DIY blade fuse mount
-- Power Supply - 0 to 30V, 0 to 5A
+### Electronics
+- Benchtop power supply 
+- EV-Peak 50W 6Amp multi-chemistry balance charger & discharger
+- LiPo battery (4C)
+- LiPo battery voltage tester with low voltage buzzer alarm
+- Voltage regulators (12V 2A; and 3.3V 0.6A)
+- Blade fuse (3A)
 - Raspberry Pi Pico
 - Adafruit 9-DOF Orientation IMU Fusion Breakout - BNO085
 - 2x JGA25-371 DC Gearmotors with Encoders
-- L298D Motor driver
+- L298 H-Bridge motor driver
 - Double-sided PCB
-- Two-wheel balancer frame
-- M2 and M3 bolts, nuts, and standoffs
 - Micro USB to USB-C Cable
+
+### Hardware
+- M2 and M3 bolts, nuts, and standoffs
 - Vernier Caliper
 
 ### Software
 - VSCode
-- MacOS Terminal (Zsh)
 - Python (v3.13.2)
 - CircuitPython (v10.0.3)
-- PID Control Logic
-- I2C Communication
 
 ### Fabrication
 - CAD Modelling: Onshape 
 - 3D Printing: Prusa i3 Mk3
-- Miniware TS100 Mini Soldering Iron
+- Soldering: Miniware TS100 Mini
 
 ## Installation/Usage
 ### Hardware
-The creation of this robotic build spawned from online exploration and ultimately led to the purchase of a [two-wheel balancing kit](/docs/media/Two%20Wheel%20Balance%20Car%20Chassis%20with%20JGA25%20Motor%20Kit.pdf). The key components of this kit were the two JGA25-371 DC gearmotors with encoders, metal brackets, and acrylic boards that came with the kit. While a decent kit, the structural parts needed to be recreated anyway, and the motors and encoders likely could have been purchased independently with more forethought. Otherwise, the list of equipment can be found in the previous section.
+This robot build began with acquiring a [two-wheel balancing kit](/docs/media/Two%20Wheel%20Balance%20Car%20Chassis%20with%20JGA25%20Motor%20Kit.pdf). This kit contained two JGA25-371 DC gearmotors with encoders, metal brackets, acrylic boards, and a few screws and standoffs. The acrylic sheets that came in the kit had asymmetric cutouts embedded throughout which added inconsistency to my build leading me to design my own structural parts.
 
-The CAD files I created to refine the robot can be accessed and viewed in several ways. Two ways are listed below.
+While a decent kit to get the ball rolling, if I were to start over again I would prefer to spend more time planning out what parts I wanted and needed. I would then design the robot from the ground up rather than retrofitting to the kit parts, which is what I ended up doing.
+
+In any case, the CAD models I created to harden the robot structure can be accessed and viewed in two ways as listed below,
 1. Via Onshape:
     - [Two-wheel balancer frame - Onshape Link](https://cad.onshape.com/documents/7dfefa6e2921ad39be2e3821/w/3f55fc51df92af93037a4f11/e/0a32c4429e5ca3bb6b5eb229?renderMode=0&uiState=69571ee25eaa326608b95544)
     - [4C LiPo Battery Power Distribution Layout - Onshape Link](https://cad.onshape.com/documents/d5dfdf18f97619740b08314e/w/11a66787474f13b8d7b80358/e/5259f1931b61786a48ea3b8f?renderMode=0&uiState=69571fcdb97c0f56a7a46870)
@@ -60,31 +67,23 @@ The CAD files I created to refine the robot can be accessed and viewed in severa
     - [4C LiPo Battery Power Distribution Layout - STEP file](/docs/CAD/LiPo%20PDB.step)
 
 ### Software
-This project is written in Python with an emphasis on CircuitPython for the onboard Raspberry Pi Pico, which acts as the central processing unit.
-
-The process for downloading CircuitPython and its dependencies onto the Raspberry Pi Pico can be followed as instructed on the [CircuitPython webpages](https://circuitpython.org/).
-
-The files loaded onto the Raspberry Pi can be seen in the following image:
+A core component of the build makes use of the BNO085 IMU. As libaries exist for this IMU, I opted to use [CircuitPython](https://circuitpython.org/) running on a Raspberry Pi Pico due to Pythons ease of use, and my familiarity with Raspberry Pi's hardware products. The libraries required to be loaded onto the Pico alongside the main `code.py` file can be seen in the following image:
 
 <img src="/docs/media/CircuitPython Files.png" alt="Screenshot of the files located on the Raspberry Pi Pico. boot_out.txt, code.py, and a lib folder with the dependencies adafruit_bno08x, adafruit_bus_device, and adafruit_register" width="200"/>
 
-Connecting the Pico to my laptop via a USB cable then allows me to update the `code.py` file on the Pico through VSCode. I could then also monitor any serial outputs from the Pico on my laptop using `ls /dev/tty.*` to find the ID of the USB port connected to the Pico, and then monitor minicom terminal outputs using the terminal command `minicom -D /dev/tty.usbmodem101 -b 115200`, or whatever usbmodem ID is connected to the Pico.
+#### Pico USB Serial Connection
+During testing and iteration of the software, my approach was to connect the Pico to my laptop via a USB cable, allowing me to access and update the onboard `code.py` directly using VSCode. 
 
-The `code.py` file on the Pico should be loaded with any one of the files under this repositories `/src` folder.
+I could then also monitor serial data from the Pico on my laptop using a tool such as `minicom`.
+> On a MacOS device, I run the terminal command `ls /dev/tty.*` to find the ID of the USB port connected to the Pico, and then I can monitor the USB serial output by running `minicom -D /dev/tty.usbmodem<PORT_ID> -b 115200`, where the previously identified port ID replaces `<PORT_ID>`, and the baud rate of 115200 is default for the Pico.
 
-- `code_alt_IMU_only.py` is the latest working code, which maintains an upright posture, though it does not prevent significant drift.
-- `code_alt_encoder_added.py` is an alternate variant that adds complexity due to the requirement of introducing a cascaded PID control loop, which is not yet properly implemented.
-- All other scripts in the `/src` folder are preceded with "test" and focus on a single test case to validate to the user that the hardware is functioning.
+#### Python Scripts and Tests
+The `code.py` file onboard the Pico would be loaded with contents from any one of the files under the `/src` folder.
 
-The `/examples` folder contains scripts created by Adafruit Industries. These scripts were used as a reference for building my own script. 
+- `code_alt_IMU_only.py` is the latest "working" code, which maintains an upright posture, but does not prevent drift.
+- `code_alt_encoder_added.py` is an alternate script that intends to introcude a cascaded PID control loop, but this is not yet properly implemented.
+- All other scripts in `/src` are preceded with "test" and are used to focus on individual tests to isolate and validate to the user that hardware is working.
 
-The `/experiments` folder contains a couple of scripts and CSV files, which were a rough attempt at capturing and displaying tilt data over time. The thought here was that with enough manual control over the robots tilt angle, in contrast to free fall under gravity, there would be clear indication of an inflection point in the captured data which would reveal a more accurate quantification of the true equilibrium angle, where the robot is in perfect balance and would not topple forward or backward in the absence of any other external forces. This approach was quite noisy and prone to cumulative errors. This approach was abandoned as other, more pressing problems and solutions came up.
+`/examples` contains scripts created by Adafruit Industries. These scripts were used as a reference for building my own. 
 
-## Why this project exists
-I developed an interest in robotics years ago after seeing polished robotic systems on social media and how these tools can be applied to impact the physical world.
-
-After successfully building an FPV quadcopter and validating that it could fly without catching on fire, I quickly realized the limitations of this type of system when it came to safety, given my inexperience flying racing-quality aerial machines. With the sudden realization and focus on acquiring a simpler platform to explore robotics safely, I rashly purchased a kit that came with two wheels, motors, encoders, and a few metal and plastic structural parts.
-
-It was only recently that I had the time and mental energy to consistently reflect on designing and building a terrestrial robot using these purchased kit parts, scavenging from other hardware I had on hand, and buying any outstanding components. Through this, I was able to explore an interest in embedded systems and control theory.
-
-Around this time, LLMs began exploding into mainstream adoption and utilization. I leveraged the capabilities these new tools enabled throughout building and testing this project to reach its MVP. From Gemini APIs, to self-hosted sharded Ollama models, and even an exploration into Cursor. I spent a good amount of time prompt "engineering", debugging hallucinations, and wrestling with frustrating LLM outputs. I am not fully convinced of the consistency or quality of LLM outputs in the absence of human intervention, nor the cost-effectiveness of deploying AI agents. At the very least, however, I was able to learn many new things throughout this foray into robotics supported by LLMs.
+`/experiments` contains a couple of scripts and CSV files, which were quick and dirty attempts to capture and display tilt data. The idea here was to capture data under controlled tests to try and identify an inflection point indicating the angle where the robot is at the unstable equilibrium, between toppling forward or backward. On testing, it was clear that more rigorous experiments and analysis would be required to get any significant value from this, and so this approach was deprioritized as other more pressing problems arose.
