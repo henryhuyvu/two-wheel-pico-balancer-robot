@@ -9,7 +9,7 @@ A PID-controlled two-wheel self-balancing robot powered by CircuitPython running
 ## Project Status and Next Steps
 Current Status: **On hold**. 
 
-The proof of concept works. The robot successfully prevents itself from falling over for a respectable period of time using only IMU tilt data. Horizontal station-keeping (preventing displacement or vehicle drift) would be the next step for development. This may or may not require energizing and using the motor encoders that are part of the motor assembly.
+The balancer is able to remain upright using only IMU tilt data. Next step is to implement horizontal station-keeping (preventing displacement and maintaing position) using motor encoder data.
 
 ## Project Motivation
 I wanted to create a mobile platform that would allow me to explore robotics safely through trial and error. I came across the two-wheel balancing kit while shopping for electronic parts and figured it might be a helpful bundle to get started. With the kit, I was able to explore an interest in embedded systems and control theory.
