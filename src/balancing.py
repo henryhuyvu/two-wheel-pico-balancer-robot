@@ -29,8 +29,9 @@ class IMU:
             REPORT_INTERVAL = const(10000) # in microseconds; 100Hz
             self.sensor = BNO08X_I2C(self.i2c)
             self.sensor.enable_feature(BNO_REPORT_GAME_ROTATION_VECTOR, REPORT_INTERVAL)
-            # self.sensor.enable_feature(BNO_REPORT_ACCELEROMETER) # Enable if needed
-            print("IMU Initialized successfully.")
+            print("Initialized successfully: Game Rotation Vector.")
+            # self.sensor.enable_feature(BNO_REPORT_ACCELEROMETER, REPORT_INTERVAL)
+            print("Initialized successfully: Accelerometer.")
         except Exception as e:
             print(f"IMU Init failed: {e}")
 
@@ -51,19 +52,18 @@ class IMU:
             roll_rad = math.atan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
             return math.degrees(roll_rad)
         except Exception:
-            # Sometimes I2C fails momentarily, return 0 or last known
             return 0.0
 
 class Motor:
     """
     Controls a single motor via L298N driver.
     """
-    def __init__(self, pwm_pin, in1_pin, in2_pin, frequency=5000):
+    PWM_FREQUENCY = 5000  # 5 kHz is a common choice for motor control
+    def __init__(self, pwm_pin, in1_pin, in2_pin, frequency=PWM_FREQUENCY):
         # Setup Direction Pins
         self.in1 = digitalio.DigitalInOut(in1_pin)
-        self.in1.direction = digitalio.Direction.OUTPUT
-        
         self.in2 = digitalio.DigitalInOut(in2_pin)
+        self.in1.direction = digitalio.Direction.OUTPUT
         self.in2.direction = digitalio.Direction.OUTPUT
         
         # Setup Speed (PWM) Pin
@@ -73,6 +73,8 @@ class Motor:
     def set_speed(self, speed_percent):
         """Sets speed from 0 to 100%."""
         if speed_percent < 0: speed_percent = 0
+        motorDeadzonePercent = 15 # Minimum power to overcome motor deadzone.
+        if (speed_percent < motorDeadzonePercent) and (speed_percent > 0): speed_percent = motorDeadzonePercent
         if speed_percent > 100: speed_percent = 100
         
         duty = int((speed_percent / 100) * self.max_duty)
@@ -149,29 +151,20 @@ class PIDController:
 
 
 def main():
-    # ==========================================
-    # MAIN SETUP
-    # ==========================================
-
     # 1. Create IMU Object
     imu = IMU(board.GP15, board.GP14)
 
     # 2. Create Motor Objects
-    # Note: You can easily swap pins here without hunting through the code
     motor_left = Motor(pwm_pin=board.GP0, in1_pin=board.GP1, in2_pin=board.GP2)
     motor_right = Motor(pwm_pin=board.GP5, in1_pin=board.GP3, in2_pin=board.GP4)
 
     # 3. Create PID Controller Object
-    # Tune these values! 
     initial_target_angle = 91.5  # Upright position
     pid = PIDController(kp=9, ki=0.165, kd=0.34, target_angle=initial_target_angle)
-    # pid = PIDController(kp=9, ki=0.045, kd=0.34, target_angle=initial_target_angle)
-    # pid = PIDController(kp=8, ki=1.095, kd=0.3, target_angle=initial_target_angle)
 
     # ==========================================
     # CONSTANTS FOR SAFETY AND CONTROL
     # ==========================================
-
     # Angle beyond which the robot is considered "fallen" and should stop motors.
     # Since 90 is upright, 45 degrees of tilt is usually a good cutoff (90 +/- 45).
     MAX_TILT_DEGREES = 45.0 
