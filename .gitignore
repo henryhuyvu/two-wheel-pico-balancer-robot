@@ -1,3 +1,4 @@
 # Ignore the venv
 .venv
 .idea
+.vscode/
