@@ -1,32 +1,12 @@
 # Two-Wheel Balancer Robot
 
-Welcome. This is a bit of a longer rambling on the trajectory I had throughout this project. By no means is this all encompassing of the challenges and solutions I came across, but it is at least a quick glimpse.
 
-My initial vision for this thing was more grandiose than the final result that I arrived at. While a tad disappointing at first, I feel this was the necessary and ideal outcome for me.
+## Overview
+Robotics is cool, but expensive.
 
-I have had some prior hands-on laboratory experience using scientific equipment, but no end-to-end familiarity with robotics. My understanding of hardware limitations and caveats of electronics evolved as I made my way through this project.
+An L293D breakout board was used as a placeholder until delivery of a TB6612 Motor Driver. The TB6612 has improved power distribution with far fewer losses compared to the L293N and L298N ICs.
 
-The trajectory of this project was not thoroughly pre-meditated. Of course online resources were explored, but for the most part, I tackled problems as they arose.
-
-## Purpose
-My initial goal was to create a robust platform for exploring sensors and computer vision. I could have likely achieved this goal simply by choosing a platform that did not have to worry about balancing, but at the time that felt too simple. 
-
-It was not until I was nearing the final stages of the MVP that I realized I was too ambitious given the limitations of the hardware I had available to me. As such, I opted to lobotomize my desire for this device to perform complex automated tasks, and opted to be satisfied if this thing can simply balance itself.
-
-## Project Investment
-Robotics is expensive. It takes some form of spending or creativity to create a physical object. I had purchased a two-wheel balancer kit in the heat of passion and had not planned too in depth to ensure all my electronics would be easy to work with. Sometimes you have to just dive in and adjust accordingly. Given my inexperience with robotics and my desire to get started, this is how I went about beginning.
-
-## Component Validation
-I purchased practically no backup equipment, so some added caution was taken to try and mitigate any potential short circuiting or catastrophic failure of parts.
-
-### Underpowered Motor Driver IC
-An unfortunate yet educational outcome of little planning was purchasing underpowered parts.
-
-I had gone to a local hardware store and purchased an L293D IC. This IC was intended to act as the motor driver for the two DC motors, however the voltage output of this IC was well below the capabilities of the motors. Testing this IC using a desktop power supply and breadboard wiring over the period of about 5 minutes resulted in the IC becoming uncomfortably hot to touch. This heat issue led me down a tangential path of considering the use of a Peltier cooler to temperature regulate the IC in addition to using cooling fins and thermal paste. While a neat idea, properly reviewing the IC and motor documentation revealed the underpowered nature of the IC and led to scrapping the idea in exchange for swapping to a more powerful motor driver, the L298N. 
-
-I had purchased a TB6612 Motor Driver due to its drastic improvement in efficiently compared to the L293N and L298N motor drivers thanks to the insignificant voltage drop when compared to the L29XX motors, however there were significant delays in delivery and thus a L298N breakout board was purchased in the meantime to get a proof of concept up and running.
-
-When I was still figuring out this motor driver issue, I was simultaneously investigating how I could best implement the IMU. Being that the robot will need to iteratively maintain and act on telemetry data, I figured real-time processing would be the best option, and thus, I did a brief dive into C programming for the Raspberry Pi Pico.
+I attempted a brief dive into C programming for processing the IMU data using a Raspberry Pi Pico.
 
 ## C Programming for Embedded Systems
 Having never used C but reading online about its speed, I wanted to get SPI communications working. Ultimately, I abandoned this route as I needed to start from scratch to understand what I was doing. Through this approach, however, I learned about concepts such as TVL, Tag-Length-Value (aka Type-Length-Value), bit banging, and some binary and hexadecimal numbering systems.
@@ -142,10 +122,6 @@ Truly a powerful tool when implemented properly, I also did my own exploration i
 
 With this tool at my fingertips, I used them quite extensively for many things, this robotics project included. Being exposed to LLM outputs for many months, I have come to better understand the high-level theory behind LLMs, and more importantly their limitations and the frustrations that can arise from them. Hallucinations, poor context utilization, the requirement for extremely detailed prompting. The idea of LLM agents is great, but as an individual knowing the limitations of such tools, the thought of deploying agents on my own dime does not feel worthwhile, even if it would be glorious to witness.
 
-While a useful tool. Oh my goodness. The level of trash code and outputs that can be produced by these clankers is unfortunate. Cursor is beautiful during its execution, but the final results need to be vetted else you subject yourself to so many attack vectors or output errors. Installing potentially malicious or even non-existent software libraries is a very real concern. I spend a significant amount of time simply vetting the results produced to ensure reliability and safety of such black-box system outputs.
+LLMs and AGI? I think not in its current form. There is no reasoning. A glorified word prediction tool at best. Can it be useful? Sure, but not without critical thinking and intervention from a human perspective.
 
-The code quality produced by LLMs for this robotics project was one instance of significant discovery of the frustrations of using these tools. You can practically turn off your brain, produce lengthy "code" and then run into many errors trying to get it to simply run. The lack of reasoning does not help when the code you are trying to update has nuances such as the fact that your motor rotation directions or IMU orientations are unique to your system, and these LLMs "forget" that this is the case and they rework the entirety of your code base, changing a `<` to `>` here and there, overriding your 90 degree coordinate change because the training data is primarily normalized to 0. 
-
-Many small possibly unnoticed changes that compound into a giant heap of trash code that because both impressive and frustrating to work with. Small code bases and changes are reasonable, but expecting to build out complex systems in a safe, reliable, and consistent manner is something that will likely require a significant overhaul in how LLMs function, or a non-trivial budget to enable agentic programming. 
-
-LLMs and AGI? I think not in its current form. There is no reasoning. A glorified word prediction tool at best. Can it be useful? Sure, but not without critical thinking and intervention from a human perspective. Critical thinking which can be impaired easily due to the perceived correctness and confidence of outputs from such tools.
+All this is to say is. Understand your tools and be wary of what they can do. Allowing these sorts of tools the ability to download libraries can be risky if the data is compromised.
