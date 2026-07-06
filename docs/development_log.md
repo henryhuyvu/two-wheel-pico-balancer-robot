@@ -124,4 +124,5 @@ With this tool at my fingertips, I used them quite extensively for many things, 
 
 LLMs and AGI? I think not in its current form. There is no reasoning. A glorified word prediction tool at best. Can it be useful? Sure, but not without critical thinking and intervention from a human perspective.
 
-All this is to say is. Understand your tools and be wary of what they can do. Allowing these sorts of tools the ability to download libraries can be risky if the data is compromised.
+# TL;DR
+Understand your tools and be wary of what they can do. Allowing these sorts of tools the ability to download libraries can be risky if the accessed data is compromised and malicious.
