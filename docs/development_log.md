@@ -1,17 +1,19 @@
 # Two-Wheel Balancer Robot
 
+The following is a scattering of lessons learned from my first attempt at building a "robot" in a resource constrained build.
+
 
 ## Overview
-Robotics is cool, but expensive.
+Robotics is cool but costly. For the most part, I made use of the electronic components which I had aggregated over time, thus, the final state of the electromechanical assembly took advantage of these resources.
 
-An L293D breakout board was used as a placeholder until delivery of a TB6612 Motor Driver. The TB6612 has improved power distribution with far fewer losses compared to the L293N and L298N ICs.
+This project used an L298N breakout board motor driver which was intended as a placeholder until delivery of a more efficient TB6612 motor Driver, as the TB6612 has improved power distribution with far fewer losses compared to the L298N and L293D ICs. In my crude construction of a power distribution board, replacing the L293D with a TB6612 felt like too much of a hassle, and so I opted to stick with the parts I had put in place.
 
-I attempted a brief dive into C programming for processing the IMU data using a Raspberry Pi Pico.
+## An attempt at C programming for embedded systems
+Wanting to learn a lower level programming language, I had initially attempted to dive into C programming for processing data from a BNO085 IMU using a Raspberry Pi Pico.
 
-## C Programming for Embedded Systems
-Having never used C but reading online about its speed, I wanted to get SPI communications working. Ultimately, I abandoned this route as I needed to start from scratch to understand what I was doing. Through this approach, however, I learned about concepts such as TVL, Tag-Length-Value (aka Type-Length-Value), bit banging, and some binary and hexadecimal numbering systems.
+Having never used C but reading online about its speed and proliferation in embedded systems, I wanted to get SPI communications working. Through this approach, I learned about concepts such as TVL, Tag-Length-Value (aka Type-Length-Value), bit banging, and some binary and hexadecimal numbering systems. It was interesting peering into finer detail of how data is communicated between the BNO085 IMU and Pico, but ultimately I abandoned this route as I wanted to iterate faster, rather than trying to aim for performance gains in a system I had not yet even proven to have worked. This meant switching away from C and SPI, to Python and I2C.
 
-I had used the VSCode Pico extension and began by simply blinking the built-in LED on the Pico. I had gotten as far as getting some sort of HEX output from the C code, as can be seen below:
+In any case, the brief attempt at C programming began by simply blinking the built-in LED on the Pico in C, and got as far as capturing some HEX output from the IMU as can be seen below:
 
 ```text
 User input detected. Beginning main()
@@ -71,58 +73,50 @@ SHTP Packet received: Channel=01, SeqNum=00, PayloadLen=5
 0x04 0xE0 0x05 0x01 0xC5 0x21 0x85 0x41
 ```
 
-Getting the SPI connection to work was okay. Getting C code to align with the IMU firmware and its unique SH-2 firmware and protocols was more challenging than I had hoped for. With essentially no C or SPI experience, vibe coding something to work produced a lot of trash code that ended up being mostly useless. Using the functionality of VSCode's Pico SDK extension was significantly more reliable.
+Getting any sort of response from the SPI connection was neat, but interpreting the results and verifying the IMU firmware with it's unique SH-2 Sensor Hub Transport Protocol (SHTP) communication was more complex that I had anticipated. With essentially no C, SPI, or embedded experience, I tried to vibe code my way into a solution. I like to think my writing abilities are quite decent, and with plenty of detailed prompting in pursuit of obtaining a working output, LLM responses mostly generated a lot of trash code that ended up being primarily useless. Starting from VSCode's Pico SDK extension was significantly more reliable and usable.
 
-The more I dug into the IMU datasheets and documentation, the more I felt that transferring the IMU's SHTP protocol into C code with proper timing of the Picos GPIO signals, orders of operation for SPI communication, in addition to managing the SH-2 software methodologies was too much effort for the payoff (which was determined after a few days of frustration and mulling).
+As I read further into the IMU datasheets and documentation, I accepted that coordinating the IMU's SHTP protocol into C code (with proper timing of GPIO signals + order of operations for SPI communication), in addition to managing the SH-2 software methodologies was too much effort for what I was aiming to achieve.
 
-With what felt like many more unknown and tangential topics I needed to learn to get the embedded C to work, I began to lose patience as my inexperience in C and desire for a tangible working product led me to finally transition into near-real-time processing that Python would have provided. I opted then to switch to I2C communications as it was much easier to implement, and the data transmission speeds suggested by datasheets for the IMU indicated 100 kbps to 400 kbps, which seemed to be sufficient for balancing.
+With more unknown and tangential topics coming to light, I decided to transition to the I2C communication protocol as it was much easier to implement, and the data transmission speeds indicated in the IMU datasheets specified reporting intervals at 100 Kbps and 400 Kbps (depending of which IMU report is called), which seemed to be sufficient for balancing response times.
 
-## Power Distribution
-Eventually I would need to devise some solution for providing power to the full system safely. Knowing that I would make use of the 4C LiPo batteries I had from a prior quadcopter project, I planned out a schematic for the power distribution such that the LiPo battery power would be sent through a fuse, and then divided into two different power rails regulated by a 12V and 3.3V voltage regulator. The 12V regulator would be strictly for the L298N motor driver, and the 3.3V regulator for the IMU, Pico, and any additional peripherals.
+## Voltage regulation and component layout
+Knowing that I would make use of a 4C LiPo battery I had from a prior quadcopter project, I planned out a simple circuit for the power distribution such that the LiPo battery power would be sent through a fuse, and then divided into two different power rails regulated by a 12V and 3.3V voltage regulator. The 12V regulator would strictly power the L298N motor driver, and the 3.3V regulator for the IMU, Pico, and any additional peripherals.
 
-To figure out the positioning of the various electrical components for this robot, I drew rough outlines of the power components onto a sheet of paper and cut them out to see how the components would be laid out with respect to each other and get a better sense for the positioning and size of the final product.
+I drew rough outlines of the power components onto a sheet of paper and cut them out to see how the components would be laid out with respect to each other and get a better sense for the positioning and size of the final product.
 
-The structure that I had decided on was roughly as follows:
-- Bottom Layer: Power distribution boards, motor controller, wiring, and shielded battery wires (did not end up shielding them).
-- Middle Layer: LiPo Battery
-- Top Layer: CPU (Raspberry Pi Pico), IMU
+The layered structure that I had decided on was roughly as follows:
+- Bottom: Power distribution board and motor controller.
+- Middle: LiPo Battery.
+- Top: Raspberry Pi Pico, IMU, LiPo battery monitor.
 
-## Robotic Frame
-Note that around this time, I had been using the acrylic structural parts that came with the two-wheel chassis kit, and so my planning revolved around this. It was only later that I decided to swap these acrylic parts with my own 3D printed parts to better accomodate for space and assembly consistency. 
+## Space utilization and structural parts
+I had been using parts that originally came with the two-wheel chassis kit, and so my design revolved around this. I decided to swap these acrylic structural pieces with my own 3D printed parts to more consistently position screw holes and mounting points.
 
-Space optimization, symmetry, and easy of assembly were part of my main focus for designing the CAD models of the robots' structure. Ensuring the battery compartment was shielded was also a priority as I did not want to introduce the risk of the LiPo battery potentially being punctured and causing a battery fire.
+In retrospect, had I decided to design my own robotic frame from the start, I likely would have been better able to optimize space and incorporate features that would lead to easier assembly and disassembly.
 
-## Software 
+With fear of sudden and accidental combustion of the LiPo battery, my main concern structurally was ensuring the battery housing was enclosed to reduce any risk of punctures and impacts that would lead to a battery fire.
 
-## I2C and Breadboard Wiring
-After transitioning to I2C and testing simple Python scripts to read and display IMU data, I realized that I made the right choice. With the initial testing of the IMU and motor controller performing admirably. The final step in my mind was to combine the two scripts into one cohesive loop in combination with PID controls.
+## I2C and poor breadboard contact
+Transitioning to I2C and testing Python scripts to read and display IMU data was very simple. On successful testing of the IMU and motor controller, the next step was to combine the two scripts into a cohesive loop with PID controls.
 
-Upon continued testing of preexisting code to ensure I can capture and report IMU data, it seemed that some reporting features of the IMU were producing errors. What I thought may have been errors propagating from issues with the I2C communications of the BNO085 through reading forum postings about this IMU, and failure to debug the issue using LLMs, I was ready to give up on the project until a later time. In the following days of planning to switch to different hardware, I powered on the IMU again, and this time I sought to ensure the single green LED on the device was shining as bright as possible (I had known that there was a correlation between tension in breadboard wiring and the IMUs onboard LED brightness).
+Continued testing to verify that I can regularly capture and report IMU data ended up resulting in inconsistent errors. 
 
-There had been evidence of a variable level of light intensity from the IMUs onboard LED - which I began to believe was tied to the power in the breakout board. In the evening when I attempted again to see what IMU reports were available to me, after fidgeting with the breadboard wiring and getting the light to be as bright as possible, it suddenly fixed any reporting errors that occured. 
+I initially believed that there have been errors resulting from issues with the BNO085 IMU itself (through reading forum posts about this IMU, and failure to debug the issue using LLMs). Returning to this problem in a couple days with nothing changed gradually revealed to me that it was likely a wiring issue. The single IMU breakout board LED had previously shone with varying intensity. Varying the amount of tension in the power wires connected to the IMU on the breadboard was directly correlated to the presence of software errors, and so the component was getting insufficient power to properly function.
 
-The poor contact points in the IMU power and signal wiring needed to be reinforced, which led to me building PCBs that would have soldered wires and electrical contacts to inevitably create much more consistent and reliable connections for the power and signal wiring between the IMU, Pico, and other electrical components.
+This poor wiring contact was resolved by transitioning the components to a PCB and hand soldering each contact so there would be little "play" in the contact area of the connections.
 
+## Final changes and moving on
+With the major hardware issues resolved one way or another, my focus could shift to software. I used LLMs quite significantly as this technology was quite intriguing at this point in time for me, but this was not without it's issues. There was plenty of refactoring needed, and many frustrations dealing with the lack of logical reasoning that LLM results produced. Essentially every bit of code produced by the various LLMs had to be reviewed, scrutinized, and reworked so that they would function in the context of my robot design.
 
-### Control Loop
-With the majority of major hardware issues resolved one way or another, the final step was to combine everything via software. The balancing problem is fairly well understood and my intention was to use a PID loop as others before me have done. 
+Something like the orientation of the IMU placed on the robot where the "up" direction corresponded to the IMUs negative y-axis conflicted greatly with the data these LLMs were trained on. One shot LLM solutions just were not possible, even when given detailed prompt instructions.
 
-Simply put, I used LLMs quite significantly to arrive at the cleaned up, class heavy version of the MVP script. There was plenty of rework that needed to be done, and reasonably just as many frustrations dealing with the lack of reasoning that LLMs provide. Essentially every bit of code that I had used that was produced by LLMs had to be reviewed, scrutinized, and finally reworked so that they would apply in my case.
+Not wanting to mess with any IMU firmware flashing to address this orientation issue, I modified my scripts to account for this axis remapping. I further introduced a tilt angle cut off so that beyond a certain tilt angle, the motors would cut off to avoid motor runoff when the robot is not upright.
 
-Due to the mechanical orientation of the IMU on the robot, the "up" direction corresponded to the IMUs negative y-axis. Not wanting to mess with any IMU firmware flashing, I restructured my scripts to account for this axis remapping. I further introduced a tilt angle cut off so that beyond a certain tilt angle, the motors would cut off to avoid any potential motor runoff. 
+With the IMU accounted for, the PID loop coefficients for the P, I, and D parameters were tuned via trial and error. With crude test design and plenty of adjustments, the PID coefficients were sufficient to prevent the robot from falling over, but not without forward or backward drift. Using only tilt meant that there is no accountability for acceleration or displacement of the robot.
 
-After the IMU was properly accounted for, the PID loop coefficients for the P, I, and D parameters were tuned via trial and error. In the latest MVP, the robot is now able to prevent itself from falling, but not without significant forward or backward drift. The MVP uses only tilt data, and the limitations of this mean that there is no accountability for acceleration or displacement of the robot.
+Next steps for this project would involve incorporating the motor encoders to track rotation of the wheels and record how far the robot has moved so as to enable the possibility of balancing on the spot, and minimizing vehicle drift. The things I've learned through this project have helped me to understand that my interests lay more toward instrumentation and data processing than control problems, and so this robot will be scraped for parts.
 
-Next steps for this project would involve incorporating the motor encoders to track rotation of the wheels and record keeping of how far the robot as moved so as to enable the possibility of balancing on the spot, and minimizing vehicle drift.
+# A comment on LLM as of 2026
+While these tools can be very powerful, they should not stand in place of critical thinking and fact checking. Understanding how these tools work and what they can do is quite helpful, but hoping that natural language can be used to generate an exact solution to your unique problems is not the right approach, no matter how much you wish it so. 
 
-# A diversion (rant) into LLMs
-Over the past year, it has been impossible to escape word of LLMs, ChatGPT, OpenAI, Gemini. Any news of LLMs and improvements is very public in North America.
-
-Truly a powerful tool when implemented properly, I also did my own exploration into this world. Starting with ChatGPT Plus, before the start of that month long subscription I knew I wanted to use an API so I could regulate my use and payment of such a tool. By the end of my ChatGPT Plus subscription I had set up my own self-hosted Docker container running OpenWebUI so that I could use LLM APIs from Gemini, Anthropic, OpenAI, Mistral, and local Ollama models.
-
-With this tool at my fingertips, I used them quite extensively for many things, this robotics project included. Being exposed to LLM outputs for many months, I have come to better understand the high-level theory behind LLMs, and more importantly their limitations and the frustrations that can arise from them. Hallucinations, poor context utilization, the requirement for extremely detailed prompting. The idea of LLM agents is great, but as an individual knowing the limitations of such tools, the thought of deploying agents on my own dime does not feel worthwhile, even if it would be glorious to witness.
-
-LLMs and AGI? I think not in its current form. There is no reasoning. A glorified word prediction tool at best. Can it be useful? Sure, but not without critical thinking and intervention from a human perspective.
-
-# TL;DR
-Understand your tools and be wary of what they can do. Allowing these sorts of tools the ability to download libraries can be risky if the accessed data is compromised and malicious.
+I have found the best use case for me is to use these tools as an extension to what search engines can do. Helping you to identify possible solutions to problems. The pattern recognition these tools provide is really something else, but to think that they can do the work for you is misplaced. An accelerator for sure, but not a substitute for actually engaging your brain, unfortunately.

@@ -1,29 +1,28 @@
 # Two-Wheel Balancing Robot
 
-A PID-controlled two-wheel self-balancing robot powered by CircuitPython running on a Raspberry Pi Pico.
+**Project Status: Archived**
+
+This is a PID-controlled two-wheel self-balancing robot powered by CircuitPython running on a Raspberry Pi Pico.
 
 <img src="/docs/media/Two-Wheel Balancer - Front.jpeg" alt="Photo of the 'front' side of the robot" width="250"/> <img src="/docs/media/Two-Wheel Balancer - Back.jpeg" alt="Photo of the 'back' side of the robot" width="250"/>
 
 <img src="/docs/media/Two-Wheel Balancer in Action.gif" alt="GIF of a two-wheeled balancing robot doing its best to stay upright" width="250"/>
 
-## Project Status and Next Steps
-Current Status: **On hold**. 
+## Motivation
+I wanted to create a terrestrial robot that would allow me to explore robotics safely through trial and error. I had purchased a two-wheel balancing kit a while back, and figured this would be a good opportunity to explore an interest in embedded systems and control theory.
 
-The balancer is able to remain upright using only IMU tilt data. Next step is to implement horizontal station-keeping (preventing displacement and maintaing position) using motor encoder data.
+Near the beginning of 2025 I also began paying closer attention to LLMs, eventually deploying a Docker container hosting local open source models and connecting to third-party LLM APIs. This has been quite helpful in providing me with information about topics and ideas I had not known before, allowing me to explore ideas and test concepts more confidently.
 
-## Project Motivation
-I wanted to create a mobile platform that would allow me to explore robotics safely through trial and error. I came across the two-wheel balancing kit while shopping for electronic parts and figured it might be a helpful bundle to get started. With the kit, I was able to explore an interest in embedded systems and control theory.
+### Lessons Learned
+Through this project I was able to learn about things such as PID control loop tuning, sensor fusion for state estimation, and the importance of thoughtful design to improve user and developer experience.
 
-Near the beginning of 2025, I began paying closer attention to LLMs, eventually deploying a Docker container hosting local open source models and connecting to third-party LLM APIs. These LLMs have been very helpful providing me with information about topics and ideas I had not known before (including robotics relevant concepts), allowing me to explore quickly and transition to testing more confidently.
+### Why I Stopped
+Pivoting my focus toward sensors, instrumentation, and data analytics / processing - areas with more direct application to my career goals.
 
 ## Technologies and Tools
 The following is a list of equipment used during testing, building, and assembly of the robot.
 
-### Personal Protective Equipment (PPE)
-- Safety glasses
-- Exhaust fan and an open window
-
-### Electronics
+### Electronics and Hardware
 - Benchtop power supply 
 - EV-Peak 50W 6Amp multi-chemistry balance charger & discharger
 - LiPo battery (4C)
@@ -32,12 +31,10 @@ The following is a list of equipment used during testing, building, and assembly
 - Blade fuse (3A)
 - Raspberry Pi Pico
 - Adafruit 9-DOF Orientation IMU Fusion Breakout - BNO085
-- 2x JGA25-371 DC Gearmotors with Encoders
+- 2x JGA25-371 DC Gear motors with Encoders
 - L298 H-Bridge motor driver
 - Double-sided PCB
 - Micro USB to USB-C Cable
-
-### Hardware
 - M2 and M3 bolts, nuts, and standoffs
 - Vernier Caliper
 
@@ -53,7 +50,7 @@ The following is a list of equipment used during testing, building, and assembly
 
 ## Installation/Usage
 ### Hardware
-This robot build began with acquiring a [two-wheel balancing kit](/docs/media/Two%20Wheel%20Balance%20Car%20Chassis%20with%20JGA25%20Motor%20Kit.pdf). This kit contained two JGA25-371 DC gearmotors with encoders, metal brackets, acrylic boards, and a few screws and standoffs. The acrylic sheets that came in the kit had asymmetric cutouts embedded throughout which added inconsistency to my build leading me to design my own structural parts.
+This robot build began with acquiring a [two-wheel balancing kit](/docs/media/Two%20Wheel%20Balance%20Car%20Chassis%20with%20JGA25%20Motor%20Kit.pdf). This kit contained two JGA25-371 DC gear motors with encoders, metal brackets, acrylic boards, and a few screws and standoffs. The acrylic sheets that came in the kit had asymmetric cutouts embedded throughout which added inconsistency to my build leading me to design my own structural parts.
 
 While a decent kit to get the ball rolling, if I were to start over again I would prefer to spend more time planning out what parts I wanted and needed. I would then design the robot from the ground up rather than retrofitting to the kit parts, which is what I ended up doing.
 
@@ -86,4 +83,4 @@ The `code.py` file onboard the Pico would be loaded with contents from any one o
 
 `/examples` contains scripts created by Adafruit Industries. These scripts were used as a reference for building my own. 
 
-`/experiments` contains a couple of scripts and CSV files, which were quick and dirty attempts to capture and display tilt data. The idea here was to capture data under controlled tests to try and identify an inflection point indicating the angle where the robot is at the unstable equilibrium, between toppling forward or backward. On testing, it was clear that more rigorous experiments and analysis would be required to get any significant value from this, and so this approach was deprioritized as other more pressing problems arose.
+`/experiments` contains a couple of scripts and CSV files, which were quick and dirty attempts to capture and display tilt data. The idea here was to capture data under controlled tests to try and identify an inflection point indicating the angle where the robot is at the unstable equilibrium, between toppling forward or backward. On testing, it was clear that more rigorous experimentation and analysis would be required to get any significant value from this, and so this line of testing was de-prioritized as other more pressing problems and solutions arose.
