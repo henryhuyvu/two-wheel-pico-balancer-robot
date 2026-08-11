@@ -9,7 +9,7 @@ import pwmio
 import busio
 import math
 from adafruit_bno08x import (
-    BNO_REPORT_ACCELEROMETER,
+    # BNO_REPORT_ACCELEROMETER,
     BNO_REPORT_GAME_ROTATION_VECTOR,
 )
 from adafruit_bno08x.i2c import BNO08X_I2C
@@ -19,19 +19,19 @@ class IMU:
     Wrapper for the BNO085 Sensor.
     Handles initialization and math conversion (Quaternion -> Euler).
     """
-    def __init__(self, i2c_scl, i2c_sda, frequency=400000):
-        self.i2c = busio.I2C(i2c_scl, i2c_sda, frequency=frequency)
+    SAMPLE_FREQ = 400000  # I2C frequency for sensor communication
+    REPORT_INTERVAL = const(10000) # in microseconds; 100Hz update rate for the IMU reports
+
+    def __init__(self, I2C_SCL, I2C_SDA, frequency=SAMPLE_FREQ):
+        self.I2C = busio.I2C(I2C_SCL, I2C_SDA, frequency=frequency)
         self.sensor = None
         self.init_sensor()
 
     def init_sensor(self):
         try: 
-            REPORT_INTERVAL = const(10000) # in microseconds; 100Hz
-            self.sensor = BNO08X_I2C(self.i2c)
-            self.sensor.enable_feature(BNO_REPORT_GAME_ROTATION_VECTOR, REPORT_INTERVAL)
+            self.sensor = BNO08X_I2C(self.I2C)
+            self.sensor.enable_feature(BNO_REPORT_GAME_ROTATION_VECTOR, IMU.REPORT_INTERVAL)
             print("Initialized successfully: Game Rotation Vector.")
-            # self.sensor.enable_feature(BNO_REPORT_ACCELEROMETER, REPORT_INTERVAL)
-            print("Initialized successfully: Accelerometer.")
         except Exception as e:
             print(f"IMU Init failed: {e}")
 
@@ -40,6 +40,7 @@ class IMU:
         Returns the Roll angle (X-axis rotation) in degrees.
         Adjusted for robot frame where +Y is UP, +Z is FWD.
         """
+        # If sensor isn't initialized, return 0.0 as a safe default.
         if not self.sensor:
             return 0.0
         try:
@@ -59,22 +60,22 @@ class Motor:
     Controls a single motor via L298N driver.
     """
     PWM_FREQUENCY = 5000  # 5 kHz is a common choice for motor control
-    def __init__(self, pwm_pin, in1_pin, in2_pin, frequency=PWM_FREQUENCY):
-        # Setup Direction Pins
-        self.in1 = digitalio.DigitalInOut(in1_pin)
-        self.in2 = digitalio.DigitalInOut(in2_pin)
-        self.in1.direction = digitalio.Direction.OUTPUT
-        self.in2.direction = digitalio.Direction.OUTPUT
+    motorDeadzonePercent = 10 # Minimum power to overcome motor deadzone.
+    def __init__(self, PWM_PIN, IN1_PIN, IN2_PIN, frequency=PWM_FREQUENCY):
+        # Setup Direction Input Pins
+        self.IN1 = digitalio.DigitalInOut(IN1_PIN)
+        self.IN2 = digitalio.DigitalInOut(IN2_PIN)
+        self.IN1.direction = digitalio.Direction.OUTPUT
+        self.IN2.direction = digitalio.Direction.OUTPUT
         
         # Setup Speed (PWM) Pin
-        self.pwm = pwmio.PWMOut(pwm_pin, frequency=frequency, duty_cycle=0)
+        self.pwm = pwmio.PWMOut(PWM_PIN, frequency=frequency, duty_cycle=0)
         self.max_duty = 65535
 
     def set_speed(self, speed_percent):
         """Sets speed from 0 to 100%."""
         if speed_percent < 0: speed_percent = 0
-        motorDeadzonePercent = 15 # Minimum power to overcome motor deadzone.
-        if (speed_percent < motorDeadzonePercent) and (speed_percent > 0): speed_percent = motorDeadzonePercent
+        if (speed_percent < Motor.motorDeadzonePercent) and (speed_percent > 0): speed_percent = motorDeadzonePercent
         if speed_percent > 100: speed_percent = 100
         
         duty = int((speed_percent / 100) * self.max_duty)
@@ -86,14 +87,14 @@ class Motor:
         """
         # Set Direction Pins
         if direction < 0:       # Forward
-            self.in1.value = True
-            self.in2.value = False
+            self.IN1.value = True
+            self.IN2.value = False
         elif direction > 0:     # Reverse
-            self.in1.value = False
-            self.in2.value = True
+            self.IN1.value = False
+            self.IN2.value = True
         else:                   # Brake/Stop
-            self.in1.value = False 
-            self.in2.value = False # Coast (set both True for Brake)
+            self.IN1.value = False 
+            self.IN2.value = False # Coast (set both True for Brake)
 
         self.set_speed(speed_percent)
 
@@ -103,8 +104,8 @@ class Motor:
     def deinit(self):
         """Release pins to be safe"""
         self.pwm.deinit()
-        self.in1.deinit()
-        self.in2.deinit()
+        self.IN1.deinit()
+        self.IN2.deinit()
 
 class PIDController:
     """
@@ -151,16 +152,17 @@ class PIDController:
 
 
 def main():
+    initial_target_angle = 91.5  # Upright position
+
     # 1. Create IMU Object
     imu = IMU(board.GP15, board.GP14)
 
     # 2. Create Motor Objects
-    motor_left = Motor(pwm_pin=board.GP0, in1_pin=board.GP1, in2_pin=board.GP2)
-    motor_right = Motor(pwm_pin=board.GP5, in1_pin=board.GP3, in2_pin=board.GP4)
+    motor_left = Motor(PWM_PIN=board.GP0, IN1_PIN=board.GP1, IN2_PIN=board.GP2)
+    motor_right = Motor(PWM_PIN=board.GP5, IN1_PIN=board.GP3, IN2_PIN=board.GP4)
 
     # 3. Create PID Controller Object
-    initial_target_angle = 91.5  # Upright position
-    pid = PIDController(kp=9, ki=0.165, kd=0.34, target_angle=initial_target_angle)
+    PID_Control = PIDController(kp=9, ki=0.165, kd=0.34, target_angle=initial_target_angle)
 
     # ==========================================
     # CONSTANTS FOR SAFETY AND CONTROL
@@ -198,35 +200,33 @@ def main():
                 # Robot has fallen too far! Stop the motors immediately.
                 motor_left.stop()
                 motor_right.stop()
-                now = time.monotonic()
-                if now - last_print_time > print_interval:
-                    # This print statement is now safe because it runs infrequently.
-                    print(f"Safety Cutoff: {tilt_angle:.2f} deg outside of {TILT_LOW} to {TILT_HIGH:.1f}. Motors stopped.")
-                    last_print_time = now
+                # This print statement is now safe because it runs infrequently.
+                print(f"Safety Cutoff: {tilt_angle:.2f} deg outside of {TILT_LOW} to {TILT_HIGH:.1f}. Motors stopped.")
                 time.sleep(1.5) # Give a moment to read the message
                 continue # Skip PID calculation for this loop and wait
 
             # C. Calculate PID Output
-            control_signal = pid.compute(tilt_angle)
+            control_signal = PID_Control.compute(tilt_angle)
             
             # D. Convert PID signal to Motor Speed/Direction
             # 1. Determine direction
             if control_signal > 0:
                 direction = 1   # Forward
-            else:
+            elif control_signal < 0:
                 direction = -1  # Reverse
+            elif control_signal == 0:
+                continue # No movement needed, skip to next loop iteration
                 
             # 2. Determine absolute speed (clamped to 0-100%)
             # CALCULATE MINIMUM POWER
-            min_power = 15  # Start with 15-20%. This is the % power required just to get wheels turning.
+            min_power = Motor.motorDeadzonePercent  # Start with 15-20%. This is the % power required just to get wheels turning.
             
-            abs_signal = abs(control_signal)
+            abs_control_signal = abs(control_signal)
             # If we need to move, add the min_power so wheels actually turn immediately
-            if abs_signal > 0.5: # Small threshold to ignore noise
-                speed = min_power + abs_signal
-            else:
-                speed = 0
-            if speed > 100: speed = 100
+            if abs_control_signal > 0.5: # Small threshold to ignore noise
+                speed = min_power + abs_control_signal
+            elif speed > 100: speed = 100
+            else: speed = 0
             
             # E. Drive Motors
             motor_left.drive(speed, direction)
